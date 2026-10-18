@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/database/schema.sql" value="624f9ec2-bf58-4f05-94ff-05adc847ea7a" />
+    <file url="file://$PROJECT_DIR$/database/seed_brand.sql" value="624f9ec2-bf58-4f05-94ff-05adc847ea7a" />
+    <file url="file://$PROJECT_DIR$/database/seed_category.sql" value="624f9ec2-bf58-4f05-94ff-05adc847ea7a" />
+    <file url="file://$PROJECT_DIR$/database/seed_product.sql" value="624f9ec2-bf58-4f05-94ff-05adc847ea7a" />
+    <file url="file://$PROJECT_DIR$/src/main/java/org/example/repository/BrandRepository.java" value="624f9ec2-bf58-4f05-94ff-05adc847ea7a" />
+    <file url="file://$PROJECT_DIR$/src/main/java/org/example/repository/CategoryRepository.java" value="624f9ec2-bf58-4f05-94ff-05adc847ea7a" />
+    <file url="file://$PROJECT_DIR$/src/main/java/org/example/repository/ProductRepository.java" value="624f9ec2-bf58-4f05-94ff-05adc847ea7a" />
+  </component>
+</project>
