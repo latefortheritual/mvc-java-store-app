@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.dto.CreateProductRequest;
+import org.example.dto.ErrorResponse;
 import org.example.exception.DataAccessException;
 import org.example.model.Product;
 import org.example.service.ProductService;
@@ -31,9 +32,9 @@ public class ProductController extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        int page = parsePositiveIntOrDefault(req, "page", DEFAULT_PAGE);
-        int size = parsePositiveIntOrDefault(req, "size", DEFAULT_SIZE);
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int page = parsePositiveIntOrDefault(request, "page", DEFAULT_PAGE);
+        int size = parsePositiveIntOrDefault(request, "size", DEFAULT_SIZE);
 
         if(size > MAX_SIZE){
             size = MAX_SIZE;
@@ -43,17 +44,32 @@ public class ProductController extends HttpServlet {
         try{
             products = productService.getProduct(page,size);
         }catch(DataAccessException e){
-            resp.setStatus(503);
-            resp.setContentType("application/json; charset=UTF-8");
-            resp.getWriter().write(jsonMapper.writeValueAsString(
-                    Map.of("error", "Database unavailable")
-            ));
+            sendError(response, 503, "Service Unavailable", "Database unavailable");
             return;
         }
 
-        resp.setStatus(200);
-        resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(jsonMapper.writeValueAsString(products));
+        response.setStatus(200);
+        response.setContentType("application/json; charset=UTF-8");
+        response.getWriter().write(jsonMapper.writeValueAsString(products));
+
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        CreateProductRequest createProductRequest;
+        try {
+            createProductRequest = jsonMapper.readValue(request.getReader(), CreateProductRequest.class);
+        } catch (JacksonException e) {
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
+        }
+
+        Product createdProduct = productService.createProduct(createProductRequest);
+
+        response.setStatus(201);
+        response.setContentType("application/json; charset=UTF-8");
+        response.getWriter().write(jsonMapper.writeValueAsString(createdProduct));
 
     }
 
@@ -83,26 +99,10 @@ public class ProductController extends HttpServlet {
         return Integer.parseInt(text) > 0;
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-        CreateProductRequest createProductRequest;
-        try {
-            createProductRequest = jsonMapper.readValue(req.getReader(), CreateProductRequest.class);
-        } catch (JacksonException e) {
-            resp.setStatus(400);
-            resp.setContentType("application/json; charset=UTF-8");
-            resp.getWriter().write(jsonMapper.writeValueAsString(
-                    Map.of("error", "Invalid request body")
-            ));
-            return;
-        }
-
-        Product createdProduct = productService.createProduct(createProductRequest);
-
-        resp.setStatus(201);
-        resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(jsonMapper.writeValueAsString(createdProduct));
-
+    private void sendError(HttpServletResponse response, int statusCode, String error, String message) throws IOException {
+        response.setStatus(statusCode);
+        response.setContentType("application/json; charset=UTF-8");
+        ErrorResponse errorResponse = new ErrorResponse(statusCode, error, message);
+        response.getWriter().write(jsonMapper.writeValueAsString(errorResponse));
     }
 }
