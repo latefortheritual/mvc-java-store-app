@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.example.dto.ErrorResponse;
 import org.example.exception.DataAccessException;
 import org.example.exception.NotFoundException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
@@ -19,6 +20,8 @@ public class GlobalExceptionFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         try {
             chain.doFilter(request, response);// the controller runs in here
+        } catch (JacksonException e) {
+            sendError(httpResponse, 400, "Bad Request", "Invalid request body");
         } catch (NotFoundException e) {
             sendError(httpResponse, 404, "Not Found", e.getMessage());
         } catch (DataAccessException e) {

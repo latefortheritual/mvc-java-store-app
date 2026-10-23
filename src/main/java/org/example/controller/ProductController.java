@@ -40,13 +40,7 @@ public class ProductController extends HttpServlet {
             size = MAX_SIZE;
         }
 
-        List<Product> products;
-        try{
-            products = productService.getProduct(page,size);
-        }catch(DataAccessException e){
-            sendError(response, 503, "Service Unavailable", "Database unavailable");
-            return;
-        }
+        List<Product> products = productService.getProduct(page,size);
 
         response.setStatus(200);
         response.setContentType("application/json; charset=UTF-8");
@@ -57,13 +51,7 @@ public class ProductController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        CreateProductRequest createProductRequest;
-        try {
-            createProductRequest = jsonMapper.readValue(request.getReader(), CreateProductRequest.class);
-        } catch (JacksonException e) {
-            sendError(response, 400, "Bad Request", "Invalid request body");
-            return;
-        }
+        CreateProductRequest createProductRequest = jsonMapper.readValue(request.getReader(), CreateProductRequest.class);
 
         Product createdProduct = productService.createProduct(createProductRequest);
 
