@@ -7,6 +7,7 @@ import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.example.config.DatabaseConfig;
 import org.example.controller.ProductController;
+import org.example.middleware.GlobalExceptionFilter;
 import org.example.middleware.LoggingFilter;
 import org.example.repository.BrandRepository;
 import org.example.repository.CategoryRepository;
@@ -68,6 +69,16 @@ public class Main {
         loggingMap.setFilterName("loggingFilter");
         loggingMap.addURLPattern("/*");
         context.addFilterMap(loggingMap);
+
+        FilterDef exceptionDef = new FilterDef();
+        exceptionDef.setFilterName("globalExceptionFilter");
+        exceptionDef.setFilter(new GlobalExceptionFilter());
+        context.addFilterDef(exceptionDef);
+
+        FilterMap exceptionMap = new FilterMap();
+        exceptionMap.setFilterName("globalExceptionFilter");
+        exceptionMap.addURLPattern("/*");
+        context.addFilterMap(exceptionMap);
 
         //start it
         tomcat.start();
