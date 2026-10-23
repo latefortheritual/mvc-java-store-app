@@ -19,17 +19,17 @@ public class LoggingFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         long start = System.currentTimeMillis();
-
-        chain.doFilter(request, response); //passes the request on; servlet runs here
-        // runs on the way out, after the servlet has finished
-
-        long duration = System.currentTimeMillis() - start;
-
-        System.out.println(
-                httpRequest.getMethod() + " "
-                        + httpRequest.getRequestURI() + " "
-                        + httpResponse.getStatus() + " "
-                        + duration + "ms"
-        );
+        try{
+            chain.doFilter(request, response); //passes the request on; servlet runs here
+            // runs on the way out, after the servlet has finished
+        } finally {
+            long duration = System.currentTimeMillis() - start;
+            System.out.println(
+                    httpRequest.getMethod() + " "
+                            + httpRequest.getRequestURI() + " "
+                            + httpResponse.getStatus() + " "
+                            + duration + "ms"
+            );
+        }
     }
 }
