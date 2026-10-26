@@ -4,8 +4,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.example.dto.CreateProductRequest;
 import org.example.dto.ErrorResponse;
+import org.example.dto.ProductWriteRequest;
 import org.example.model.Product;
 import org.example.service.ProductService;
 import tools.jackson.databind.json.JsonMapper;
@@ -48,7 +48,7 @@ public class ProductsController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        CreateProductRequest createProductRequest = jsonMapper.readValue(request.getReader(), CreateProductRequest.class);
+        ProductWriteRequest createProductRequest = jsonMapper.readValue(request.getReader(), ProductWriteRequest.class);
 
         Product createdProduct = productService.createProduct(createProductRequest);
 
