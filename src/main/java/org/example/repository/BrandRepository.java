@@ -1,5 +1,6 @@
 package org.example.repository;
 
+import org.example.config.DatabaseConfig; // [router-3] containerul injectează configurația, nu trei String-uri
 import org.example.exception.DataAccessException;
 
 import java.sql.Connection;
@@ -14,11 +15,11 @@ public class BrandRepository {
     private final String user;
     private final String password;
 
-    public BrandRepository(String url, String user, String password) {
-        this.url = url;
-        this.user = user;
-        this.password = password;
-    }
+    public BrandRepository(DatabaseConfig databaseConfig) { // [router-3] o singură dependență, de un tip pe care containerul îl poate găsi
+        this.url = databaseConfig.getDbUrl(); // [router-3] URL-ul bazei de date, citit din configurație
+        this.user = databaseConfig.getDbUser(); // [router-3] utilizatorul, citit din configurație
+        this.password = databaseConfig.getDbPassword(); // [router-3] parola, citită din configurație
+    } // [router-3] sfârșitul constructorului
 
     public boolean existsById(int brandId) {
         String sql = "SELECT id " +

@@ -1,26 +1,19 @@
 package org.example.controller;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.example.dto.ErrorResponse;
+import org.example.dto.PatchProductRequest; // [router-5] body-ul pentru patch, preluat din fostul ProductController
 import org.example.dto.ProductWriteRequest;
+import org.example.framework.RequestParams; // [router-5] parametrii din query string, fără HttpServletRequest
 import org.example.model.Product;
 import org.example.service.ProductService;
-import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
 import java.util.List;
 
-public class ProductsController extends HttpServlet {
+public class ProductsController { // [router-5] nu mai extinde HttpServlet: e o clasă simplă, după regulile noastre
 
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_SIZE = 100;
     private static final int MAX_SIZE = 1000;
     private static final int MAX_DIGITS = 9;
-
-    private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     private final ProductService productService;
 
@@ -28,40 +21,42 @@ public class ProductsController extends HttpServlet {
         this.productService = productService;
     }
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        int page = parsePositiveIntOrDefault(request, "page", DEFAULT_PAGE);
-        int size = parsePositiveIntOrDefault(request, "size", DEFAULT_SIZE);
+    public List<Product> getAll(RequestParams params) { // [router-5] GET /products; înainte era doGet
+        int page = parsePositiveIntOrDefault(params, "page", DEFAULT_PAGE); // [router-5] citim din RequestParams, nu din request
+        int size = parsePositiveIntOrDefault(params, "size", DEFAULT_SIZE); // [router-5] la fel pentru size
 
         if(size > MAX_SIZE){
             size = MAX_SIZE;
         }
 
         List<Product> products = productService.getProduct(page,size);
+        return products; // [router-5] întoarcem obiectul; dispatcher-ul îl scrie ca JSON
+    } // [router-5] sfârșitul metodei getAll
 
-        response.setStatus(200);
-        response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write(jsonMapper.writeValueAsString(products));
+    public Product getOne(int id) { // [router-5] GET /products/123; id-ul vine deja validat de dispatcher
+        return productService.getProductById(id); // [router-5] dacă produsul nu există, serviciul aruncă ProductNotFoundException, adică 404
+    } // [router-5] sfârșitul metodei getOne
 
-    }
+    public Product create(ProductWriteRequest body) { // [router-5] POST /products; înainte era doPost
+        return productService.createProduct(body); // [router-5] dispatcher-ul răspunde cu 201 pentru create
+    } // [router-5] sfârșitul metodei create
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public Product update(int id, ProductWriteRequest body) { // [router-5] PUT /products/123; preluat din fostul ProductController
+        return productService.updateProductById(id, body); // [router-5] înlocuiește tot produsul
+    } // [router-5] sfârșitul metodei update
 
-        ProductWriteRequest createProductRequest = jsonMapper.readValue(request.getReader(), ProductWriteRequest.class);
+    public Product patch(int id, PatchProductRequest body) { // [router-5] PATCH /products/123; preluat din fostul ProductController
+        return productService.updateProductFieldsById(id, body); // [router-5] schimbă doar câmpurile trimise
+    } // [router-5] sfârșitul metodei patch
 
-        Product createdProduct = productService.createProduct(createProductRequest);
+    public Product delete(int id) { // [router-5] DELETE /products/123; preluat din fostul ProductController
+        return productService.deleteProductById(id); // [router-5] întoarce produsul șters, ca înainte
+    } // [router-5] sfârșitul metodei delete
 
-        response.setStatus(201);
-        response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write(jsonMapper.writeValueAsString(createdProduct));
-
-    }
-
-    private int parsePositiveIntOrDefault(HttpServletRequest request, String parameterName, int defaultValue){
+    private int parsePositiveIntOrDefault(RequestParams params, String parameterName, int defaultValue){ // [router-5] primește RequestParams în loc de HttpServletRequest
         int result = defaultValue;
 
-        String text = request.getParameter(parameterName);
+        String text = params.get(parameterName); // [router-5] același comportament ca request.getParameter()
         if(isPositiveNaturalNumber(text)){
             result = Integer.parseInt(text);
         }
@@ -82,12 +77,5 @@ public class ProductsController extends HttpServlet {
             }
         }
         return Integer.parseInt(text) > 0;
-    }
-
-    private void sendError(HttpServletResponse response, int statusCode, String error, String message) throws IOException {
-        response.setStatus(statusCode);
-        response.setContentType("application/json; charset=UTF-8");
-        ErrorResponse errorResponse = new ErrorResponse(statusCode, error, message);
-        response.getWriter().write(jsonMapper.writeValueAsString(errorResponse));
     }
 }
