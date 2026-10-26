@@ -29,8 +29,8 @@ public class ProductsE2ETest {
 
     @Test
     void negativePageReturnsSameAsDefaultPage() throws IOException, InterruptedException {
-        HttpResponse<String> negativePageResponse = get(BASE_URL + "/product?page=-1&size=10");
-        HttpResponse<String> defaultPageResponse = get(BASE_URL + "/product?size=10");
+        HttpResponse<String> negativePageResponse = get(BASE_URL + "/products?page=-1&size=10");
+        HttpResponse<String> defaultPageResponse = get(BASE_URL + "/products?size=10");
 
         assertEquals(200, negativePageResponse.statusCode());
         assertEquals(200, defaultPageResponse.statusCode());
@@ -42,8 +42,8 @@ public class ProductsE2ETest {
 
     @Test
     void textPageReturnsSameAsDefaultPage() throws IOException, InterruptedException {
-        HttpResponse<String> textPageResponse = get(BASE_URL + "/product?page=abc&size=10");
-        HttpResponse<String> defaultPageResponse = get(BASE_URL + "/product?size=10");
+        HttpResponse<String> textPageResponse = get(BASE_URL + "/products?page=abc&size=10");
+        HttpResponse<String> defaultPageResponse = get(BASE_URL + "/products?size=10");
 
         assertEquals(200, textPageResponse.statusCode());
         assertEquals(200, defaultPageResponse.statusCode());
@@ -53,8 +53,8 @@ public class ProductsE2ETest {
 
     @Test
     void zeroSizeReturnsSameAsDefaultSize() throws IOException, InterruptedException {
-        HttpResponse<String> zeroSizeResponse = get(BASE_URL + "/product?size=0");
-        HttpResponse<String> defaultSizeResponse = get(BASE_URL + "/product");
+        HttpResponse<String> zeroSizeResponse = get(BASE_URL + "/products?size=0");
+        HttpResponse<String> defaultSizeResponse = get(BASE_URL + "/products");
 
         assertEquals(200, zeroSizeResponse.statusCode());
         assertEquals(200, defaultSizeResponse.statusCode());
@@ -64,8 +64,8 @@ public class ProductsE2ETest {
 
     @Test
     void sizeGreaterThanMaxReturnsSameAsMaxSize() throws IOException, InterruptedException {
-        HttpResponse<String> sizeGreaterThanMaxResponse = get(BASE_URL + "/product?size=1001");
-        HttpResponse<String> maxSizeResponse = get(BASE_URL + "/product?size=1000");
+        HttpResponse<String> sizeGreaterThanMaxResponse = get(BASE_URL + "/products?size=1001");
+        HttpResponse<String> maxSizeResponse = get(BASE_URL + "/products?size=1000");
 
         assertEquals(200, sizeGreaterThanMaxResponse.statusCode());
         assertEquals(200, maxSizeResponse.statusCode());
@@ -75,8 +75,8 @@ public class ProductsE2ETest {
 
     @Test
     void missingParamsUseDefaultValues() throws IOException, InterruptedException {
-        HttpResponse<String> missingParamsResponse = get(BASE_URL + "/product");
-        HttpResponse<String> DefaultValuesResponse = get(BASE_URL + "/product?page=1&size=100");
+        HttpResponse<String> missingParamsResponse = get(BASE_URL + "/products");
+        HttpResponse<String> DefaultValuesResponse = get(BASE_URL + "/products?page=1&size=100");
 
         assertEquals(200, missingParamsResponse.statusCode());
         assertEquals(200, DefaultValuesResponse.statusCode());
@@ -85,9 +85,3 @@ public class ProductsE2ETest {
     }
 
 }
-
-//zeroPageReturnsSameAsDefaultPage
-//negativeSizeReturnsSameAsDefaultSize
-//textSizeReturnsSameAsDefaultSize
-//mixedPageReturnsSameAsDefaultPage
-//responseDoesNotContainMoreTicketsThanRequestedSize
