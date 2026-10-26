@@ -47,18 +47,15 @@ public class ProductService {
 
     public Product createProduct(ProductWriteRequest request){
 
-        if(!brandRepository.existsById(request.brandId())){
-            throw new BrandNotFoundException(request.brandId());
-        }
-
-        if(!categoryRepository.existsById(request.categoryId())){
-            throw new CategoryNotFoundException(request.categoryId());
-        }
+        ensureBrandExists(request.brandId());
+        ensureCategoryExists(request.categoryId());
 
         return productRepository.createProduct(request);
     }
 
     public Product updateProductById(int productId, ProductWriteRequest request){
+        ensureBrandExists(request.brandId());
+        ensureCategoryExists(request.categoryId());
         Optional<Product> optionalProduct = productRepository.updateById(productId, request);
 
         if(optionalProduct.isEmpty()){
@@ -69,6 +66,13 @@ public class ProductService {
     }
 
     public Product updateProductFieldsById(int productId, PatchProductRequest request){
+        if(request.brandId() != null){
+            ensureBrandExists(request.brandId());
+        }
+        if(request.categoryId() != null){
+            ensureCategoryExists(request.categoryId());
+        }
+
         Optional<Product> optionalProduct = productRepository.updateFieldsById(productId, request);
 
         if(optionalProduct.isEmpty()){
@@ -86,5 +90,17 @@ public class ProductService {
         }
 
         return optionalProduct.get();
+    }
+
+    private void ensureBrandExists(int brandId){
+        if(!brandRepository.existsById(brandId)){
+            throw new BrandNotFoundException(brandId);
+        }
+    }
+
+    private void ensureCategoryExists(int categoryId){
+        if(!categoryRepository.existsById(categoryId)){
+            throw new CategoryNotFoundException(categoryId);
+        }
     }
 }
