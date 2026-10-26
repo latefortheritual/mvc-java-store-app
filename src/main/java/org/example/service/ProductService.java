@@ -1,14 +1,18 @@
 package org.example.service;
 
-import org.example.dto.CreateProductRequest;
+import org.example.dto.MobileProductsResponse;
+import org.example.dto.PatchProductRequest;
+import org.example.dto.ProductWriteRequest;
 import org.example.exception.BrandNotFoundException;
 import org.example.exception.CategoryNotFoundException;
+import org.example.exception.ProductNotFoundException;
 import org.example.model.Product;
 import org.example.repository.BrandRepository;
 import org.example.repository.CategoryRepository;
 import org.example.repository.ProductRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public class ProductService {
 
@@ -24,10 +28,24 @@ public class ProductService {
 
     public List<Product> getProduct(int page, int size){
         long offset = (long) (page - 1) * size;
-        return productRepository.listProduct(size, offset);
+        return productRepository.readProduct(size, offset);
     }
 
-    public Product createProduct(CreateProductRequest request){
+    public Product getProductById(int productId){
+        Optional<Product> optionalProduct = productRepository.readById(productId);
+
+        if(optionalProduct.isEmpty()){
+            throw new ProductNotFoundException(productId);
+        }
+
+        return optionalProduct.get();
+    }
+
+    public MobileProductsResponse getMobileProducts(){
+        return productRepository.readMobileProducts();
+    }
+
+    public Product createProduct(ProductWriteRequest request){
 
         if(!brandRepository.existsById(request.brandId())){
             throw new BrandNotFoundException(request.brandId());
@@ -38,5 +56,35 @@ public class ProductService {
         }
 
         return productRepository.createProduct(request);
+    }
+
+    public Product updateProductById(int productId, ProductWriteRequest request){
+        Optional<Product> optionalProduct = productRepository.updateById(productId, request);
+
+        if(optionalProduct.isEmpty()){
+            throw new ProductNotFoundException(productId);
+        }
+
+        return optionalProduct.get();
+    }
+
+    public Product updateProductFieldsById(int productId, PatchProductRequest request){
+        Optional<Product> optionalProduct = productRepository.updateFieldsById(productId, request);
+
+        if(optionalProduct.isEmpty()){
+            throw new ProductNotFoundException(productId);
+        }
+
+        return optionalProduct.get();
+    }
+
+    public Product deleteProductById(int productId){
+        Optional<Product> optionalProduct = productRepository.deleteById(productId);
+
+        if(optionalProduct.isEmpty()){
+            throw new ProductNotFoundException(productId);
+        }
+
+        return optionalProduct.get();
     }
 }

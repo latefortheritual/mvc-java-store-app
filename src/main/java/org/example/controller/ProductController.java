@@ -4,25 +4,17 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.example.dto.CreateProductRequest;
 import org.example.dto.ErrorResponse;
-import org.example.exception.DataAccessException;
+import org.example.dto.PatchProductRequest;
+import org.example.dto.ProductWriteRequest;
 import org.example.model.Product;
 import org.example.service.ProductService;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 public class ProductController extends HttpServlet {
-
-    private static final int DEFAULT_PAGE = 1;
-    private static final int DEFAULT_SIZE = 100;
-    private static final int MAX_SIZE = 1000;
     private static final int MAX_DIGITS = 9;
-
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     private final ProductService productService;
@@ -33,43 +25,100 @@ public class ProductController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        int page = parsePositiveIntOrDefault(request, "page", DEFAULT_PAGE);
-        int size = parsePositiveIntOrDefault(request, "size", DEFAULT_SIZE);
+        String pathInfo = request.getPathInfo(); // "/id"
 
-        if(size > MAX_SIZE){
-            size = MAX_SIZE;
+        if(pathInfo == null || pathInfo.equals("/")){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
+        }
+        String productIdText = pathInfo.substring(1);
+
+        if(productIdText.contains("/") || !isPositiveNaturalNumber(productIdText)){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
         }
 
-        List<Product> products = productService.getProduct(page,size);
+        int productId = Integer.parseInt(productIdText);
+        Product product = productService.getProductById(productId);
+
 
         response.setStatus(200);
         response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write(jsonMapper.writeValueAsString(products));
-
+        response.getWriter().write(jsonMapper.writeValueAsString(product));
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String pathInfo = request.getPathInfo(); // "/id"
 
-        CreateProductRequest createProductRequest = jsonMapper.readValue(request.getReader(), CreateProductRequest.class);
+        if(pathInfo == null || pathInfo.equals("/")){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
+        }
+        String productIdText = pathInfo.substring(1);
 
-        Product createdProduct = productService.createProduct(createProductRequest);
-
-        response.setStatus(201);
-        response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write(jsonMapper.writeValueAsString(createdProduct));
-
-    }
-
-    private int parsePositiveIntOrDefault(HttpServletRequest request, String parameterName, int defaultValue){
-        int result = defaultValue;
-
-        String text = request.getParameter(parameterName);
-        if(isPositiveNaturalNumber(text)){
-            result = Integer.parseInt(text);
+        if(productIdText.contains("/") || !isPositiveNaturalNumber(productIdText)){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
         }
 
-        return result;
+        int productId = Integer.parseInt(productIdText);
+        Product product = productService.deleteProductById(productId);
+
+        response.setStatus(200);
+        response.setContentType("application/json; charset=UTF-8");
+        response.getWriter().write(jsonMapper.writeValueAsString(product));
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String pathInfo = request.getPathInfo(); // "/id"
+
+        if(pathInfo == null || pathInfo.equals("/")){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
+        }
+        String productIdText = pathInfo.substring(1);
+
+        if(productIdText.contains("/") || !isPositiveNaturalNumber(productIdText)){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
+        }
+
+        int productId = Integer.parseInt(productIdText);
+
+        ProductWriteRequest productWriteRequest = jsonMapper.readValue(request.getReader(), ProductWriteRequest.class);
+        Product product = productService.updateProductById(productId, productWriteRequest);
+
+
+        response.setStatus(200);
+        response.setContentType("application/json; charset=UTF-8");
+        response.getWriter().write(jsonMapper.writeValueAsString(product));
+    }
+
+    @Override
+    protected void doPatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String pathInfo = request.getPathInfo(); // "/id"
+
+        if(pathInfo == null || pathInfo.equals("/")){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
+        }
+        String productIdText = pathInfo.substring(1);
+
+        if(productIdText.contains("/") || !isPositiveNaturalNumber(productIdText)){
+            sendError(response, 400, "Bad Request", "Invalid request body");
+            return;
+        }
+
+        int productId = Integer.parseInt(productIdText);
+
+        PatchProductRequest patchProductRequest = jsonMapper.readValue(request.getReader(), PatchProductRequest.class);
+        Product product = productService.updateProductFieldsById(productId, patchProductRequest);
+
+        response.setStatus(200);
+        response.setContentType("application/json; charset=UTF-8");
+        response.getWriter().write(jsonMapper.writeValueAsString(product));
     }
 
     private boolean isPositiveNaturalNumber (String text){

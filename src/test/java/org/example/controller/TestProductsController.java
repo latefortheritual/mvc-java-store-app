@@ -7,7 +7,6 @@ import org.example.exception.DataAccessException;
 import org.example.service.ProductService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -18,7 +17,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.mock;
 
-public class TestProductController {
+public class TestProductsController {
 
 
     @Test
@@ -29,7 +28,7 @@ public class TestProductController {
         Mockito.when(request.getParameter("page")).thenReturn("2");
         Mockito.when(request.getParameter("size")).thenReturn("1001");
         ProductService productService = mock(ProductService.class);
-        ProductController productController = new ProductController(productService);
+        ProductsController productsController = new ProductsController(productService);
 
         HttpServletResponse response = mock(HttpServletResponse.class);
         PrintWriter writer = mock(PrintWriter.class);
@@ -39,7 +38,7 @@ public class TestProductController {
                 .thenReturn(List.of());
 
         //Act
-        productController.doGet(request, response);
+        productsController.doGet(request, response);
 
         //Assert
         Mockito.verify(productService).getProduct(2, 1000);
@@ -64,10 +63,10 @@ public class TestProductController {
         PrintWriter printWriter = new PrintWriter(stringWriter);
         Mockito.when(response.getWriter()).thenReturn(printWriter);
 
-        ProductController productController = new ProductController(productService);
+        ProductsController productsController = new ProductsController(productService);
 
         //Act
-        productController.doGet(request,response);
+        productsController.doGet(request,response);
 
         //Assert
         Mockito.verify(response).setStatus(503);

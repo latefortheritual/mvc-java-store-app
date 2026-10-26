@@ -6,7 +6,9 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.example.config.DatabaseConfig;
+import org.example.controller.MobileProductsController;
 import org.example.controller.ProductController;
+import org.example.controller.ProductsController;
 import org.example.middleware.GlobalExceptionFilter;
 import org.example.middleware.LoggingFilter;
 import org.example.repository.BrandRepository;
@@ -20,13 +22,8 @@ public class Main {
         Tomcat tomcat = new Tomcat();
 
         tomcat.setPort(8083);
-
-        // opens port 8083, accepts incoming connections, reads the raw http text Bruno sends and
-        // turns it into the request object your code will receive later
         tomcat.getConnector();
 
-        //add an empty context = the space where your app's servlets will live later
-        // servlet = a java class that handles HTTP requests inside Tomcat
         Context context = tomcat.addContext("", null);
 
 
@@ -52,12 +49,14 @@ public class Main {
 
         ProductService productService = new ProductService(productRepository, brandRepository, categoryRepository);
 
-        // pune obiectul TicketController in container sub numele "ticketServlet"
-        Tomcat.addServlet(context, "productServlet", new ProductController(productService));
-        // TicketController este un servlet ptr Tomcat (extends HttpServlet) si are si rol de controller
-        // servlet = clasa Java care raspunde la cereri HTTP + ruleaza in interiorul unui server (Tomcat)
 
-        context.addServletMappingDecoded("/product", "productServlet");
+        Tomcat.addServlet(context, "productsServlet", new ProductsController(productService));
+        Tomcat.addServlet(context, "productServlet", new ProductController(productService));
+        Tomcat.addServlet(context, "mobileProductsServlet", new MobileProductsController(productService));
+
+        context.addServletMappingDecoded("/products", "productsServlet");
+        context.addServletMappingDecoded("/products/*", "productServlet");
+        context.addServletMappingDecoded("/mobile/products", "mobileProductsServlet");
 
         //filters take 2 objects: a definition(the filter and its name) and a mapping (which paths it applies to)
         FilterDef loggingDef = new FilterDef();
@@ -80,7 +79,6 @@ public class Main {
         exceptionMap.addURLPattern("/*");
         context.addFilterMap(exceptionMap);
 
-        //start it
         tomcat.start();
 
         //keep the program running; without this main can finish right after starting and the server stops with it
