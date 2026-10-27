@@ -1,17 +1,12 @@
 package org.example.controller;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.example.dto.MobileProductsResponse;
+import org.example.framework.annotation.Controller; // [router-6] marchează clasa ca controller și îi dă path-ul de bază
+import org.example.framework.annotation.Get; // [router-6] adnotarea pentru GET
 import org.example.service.ProductService;
-import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
-
-public class MobileProductsController extends HttpServlet {
-    private final JsonMapper jsonMapper = JsonMapper.builder().build();
+@Controller("/mobile/products") // [router-6] o rută cu două segmente fixe, imposibilă cu vechea convenție de nume
+public class MobileProductsController { // [router-6] nu mai extinde HttpServlet: e un controller simplu, ca ProductsController
 
     private final ProductService productService;
 
@@ -19,12 +14,10 @@ public class MobileProductsController extends HttpServlet {
         this.productService = productService;
     }
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    @Get // [router-6] GET /mobile/products
+    public MobileProductsResponse getAll() { // [router-6] înainte era doGet; acum întoarce obiectul, iar dispatcher-ul scrie JSON-ul
         MobileProductsResponse mobileProducts = productService.getMobileProducts();
 
-        resp.setStatus(200);
-        resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(jsonMapper.writeValueAsString(mobileProducts));
-    }
+        return mobileProducts; // [router-6] statusul 200 și JSON-ul le pune dispatcher-ul
+    } // [router-6] sfârșitul metodei getAll
 }
