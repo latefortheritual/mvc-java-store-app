@@ -13,6 +13,6 @@ public class PathInfoRequest extends HttpServletRequestWrapper {
 
     @Override
     public String getPathInfo() {
-        return getPathInfo();
+        return pathInfo;
     }
 }

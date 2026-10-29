@@ -9,6 +9,7 @@ import org.example.config.DatabaseConfig;
 import org.example.controller.MobileProductsController;
 import org.example.controller.ProductController;
 import org.example.controller.ProductsController;
+import org.example.framework.DispatcherServlet;
 import org.example.middleware.GlobalExceptionFilter;
 import org.example.middleware.LoggingFilter;
 import org.example.repository.BrandRepository;
@@ -50,12 +51,13 @@ public class Main {
         ProductService productService = new ProductService(productRepository, brandRepository, categoryRepository);
 
 
-        Tomcat.addServlet(context, "productsServlet", new ProductsController(productService));
-        Tomcat.addServlet(context, "productServlet", new ProductController(productService));
+        ProductsController productsController = new ProductsController(productService);
+        ProductController productController = new ProductController(productService);
+
+        Tomcat.addServlet(context, "dispatcherServlet", new DispatcherServlet(productController, productsController));
         Tomcat.addServlet(context, "mobileProductsServlet", new MobileProductsController(productService));
 
-        context.addServletMappingDecoded("/products", "productsServlet");
-        context.addServletMappingDecoded("/products/*", "productServlet");
+        context.addServletMappingDecoded("/*", "dispatcherServlet");
         context.addServletMappingDecoded("/mobile/products", "mobileProductsServlet");
 
         //filters take 2 objects: a definition(the filter and its name) and a mapping (which paths it applies to)
