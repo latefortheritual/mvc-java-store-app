@@ -4,6 +4,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.example.annotation.Log;
 import org.example.dto.ErrorResponse;
 import org.example.dto.ProductWriteRequest;
 import org.example.model.Product;
@@ -11,6 +14,7 @@ import org.example.service.ProductService;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 public class ProductsController extends HttpServlet {
@@ -21,6 +25,7 @@ public class ProductsController extends HttpServlet {
     private static final int MAX_DIGITS = 9;
 
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
+    private static final Logger logger = LogManager.getLogger(ProductsController.class);
 
     private final ProductService productService;
 
@@ -28,8 +33,18 @@ public class ProductsController extends HttpServlet {
         this.productService = productService;
     }
 
+    @Log
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        try{
+            Method method = ProductsController.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
+            if(method.isAnnotationPresent(Log.class)){
+                logger.info("{} {}", request.getMethod(), request.getRequestURI());
+            }
+        }catch(NoSuchMethodException e){
+            throw new RuntimeException(e);
+        }
+
         int page = parsePositiveIntOrDefault(request, "page", DEFAULT_PAGE);
         int size = parsePositiveIntOrDefault(request, "size", DEFAULT_SIZE);
 
