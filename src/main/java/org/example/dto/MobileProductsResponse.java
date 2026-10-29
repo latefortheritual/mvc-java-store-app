@@ -8,6 +8,7 @@ import java.util.Map;
 public record MobileProductsResponse(
         List<Product> products,
         Map<Integer, String> brands,
-        Map<Integer, String> categories
+        Map<Integer, String> categories,
+        PaginationMeta meta
 ) {
 }

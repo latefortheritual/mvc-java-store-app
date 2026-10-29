@@ -2,19 +2,21 @@ package org.example.service;
 
 import org.example.dto.MobileProductsResponse;
 import org.example.dto.PatchProductRequest;
+import org.example.dto.ProductWithBrandAndCategoryRow;
 import org.example.dto.ProductWriteRequest;
 import org.example.exception.BrandNotFoundException;
 import org.example.exception.CategoryNotFoundException;
+import org.example.exception.InvalidPaginationException;
 import org.example.exception.ProductNotFoundException;
 import org.example.model.Product;
 import org.example.repository.BrandRepository;
 import org.example.repository.CategoryRepository;
 import org.example.repository.ProductRepository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class ProductService {
+    private static final int MAX_LIMIT = 1000;
 
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
@@ -41,8 +43,37 @@ public class ProductService {
         return optionalProduct.get();
     }
 
-    public MobileProductsResponse getMobileProducts(){
-        return productRepository.readMobileProducts();
+    public ProductPage getProducts(int offset, int limit) {
+        if (limit < 1 || limit > MAX_LIMIT) {
+            throw new InvalidPaginationException("limit must be between 1 and " + MAX_LIMIT);
+        }
+
+        if (offset < 0) {
+            throw new InvalidPaginationException("offset must be greater than or equal to 0");
+        }
+
+        List<ProductWithBrandAndCategoryRow> rows = productRepository.getProductsWithBrandsAndCategories(offset, limit);
+
+        List<Product> products = new ArrayList<>();
+        Map<Integer, String> brands = new HashMap<>();
+        Map<Integer, String> categories = new HashMap<>();
+
+        for (ProductWithBrandAndCategoryRow row : rows) {
+            products.add(new Product(
+                    row.productId(),
+                    row.productName(),
+                    row.brandId(),
+                    row.categoryId(),
+                    row.price()
+            ));
+
+            brands.put(row.brandId(), row.brandName());
+            categories.put(row.categoryId(), row.categoryName());
+        }
+
+        long total = productRepository.countProducts();
+
+        return new ProductPage(products, brands, categories, total, limit, offset);
     }
 
     public Product createProduct(ProductWriteRequest request){

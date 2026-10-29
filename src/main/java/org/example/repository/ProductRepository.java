@@ -2,6 +2,7 @@ package org.example.repository;
 
 import org.example.dto.MobileProductsResponse;
 import org.example.dto.PatchProductRequest;
+import org.example.dto.ProductWithBrandAndCategoryRow;
 import org.example.dto.ProductWriteRequest;
 import org.example.exception.DataAccessException;
 import org.example.model.Product;
@@ -207,38 +208,58 @@ public class ProductRepository {
         }
     }
 
-    public MobileProductsResponse readMobileProducts(){
+    public List<ProductWithBrandAndCategoryRow> getProductsWithBrandsAndCategories(int offset, int limit){
         String sql = "SELECT p.id, p.name, p.price, b.id AS brand_id, b.name AS brand_name, c.id AS category_id, c.name AS category_name " +
                 "FROM product p " +
                 "INNER JOIN brand b ON p.brand_id = b.id " +
                 "INNER JOIN category c ON p.category_id = c.id " +
                 "ORDER BY p.id " +
-                "LIMIT 100";
-        List<Product> products = new ArrayList<>();
-        Map<Integer, String> brands = new HashMap<>();
-        Map<Integer, String> categories = new HashMap<>();
+                "LIMIT ? " +
+                "OFFSET ?";
+        List<ProductWithBrandAndCategoryRow> rows = new ArrayList<>();
 
         try (Connection connection = DriverManager.getConnection(url, user, password);
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
+            statement.setInt(1, limit);
+            statement.setInt(2, offset);
+
             ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
-                products.add(mapRow(resultSet));
-                brands.put(
+                rows.add(new ProductWithBrandAndCategoryRow(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name"),
+                        resultSet.getBigDecimal("price"),
                         resultSet.getInt("brand_id"),
-                        resultSet.getString("brand_name")
-                );
-                categories.put(
+                        resultSet.getString("brand_name"),
                         resultSet.getInt("category_id"),
                         resultSet.getString("category_name")
-                );
+                ));
             }
-
         } catch (SQLException e) {
             throw new DataAccessException("Could not load products", e);
         }
-        return new MobileProductsResponse(products,brands,categories);
+        return rows;
+    }
+
+    public long countProducts(){
+        String sql = "SELECT COUNT(*) AS total FROM product";
+
+        try (Connection connection = DriverManager.getConnection(url, user, password);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+             ResultSet resultSet = statement.executeQuery();
+
+            while (!resultSet.next()) {
+                throw new SQLException("Product count query returned no row");
+            }
+
+            return resultSet.getLong("total");
+
+        } catch (SQLException e) {
+            throw new DataAccessException("Could not count products", e);
+        }
+
     }
 
     private Product mapRow(ResultSet resultSet) throws SQLException {

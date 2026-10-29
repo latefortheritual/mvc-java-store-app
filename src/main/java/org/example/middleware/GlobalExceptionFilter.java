@@ -3,7 +3,9 @@ package org.example.middleware;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.dto.ErrorResponse;
+import org.example.exception.BadRequestException;
 import org.example.exception.DataAccessException;
+import org.example.exception.InvalidPaginationException;
 import org.example.exception.NotFoundException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
@@ -22,6 +24,8 @@ public class GlobalExceptionFilter implements Filter {
             chain.doFilter(request, response);// the controller runs in here
         } catch (JacksonException e) {
             sendError(httpResponse, 400, "Bad Request", "Invalid request body");
+        } catch (BadRequestException |InvalidPaginationException e){
+            sendError(httpResponse, 400, "Bad Request", e.getMessage());
         } catch (NotFoundException e) {
             sendError(httpResponse, 404, "Not Found", e.getMessage());
         } catch (DataAccessException e) {

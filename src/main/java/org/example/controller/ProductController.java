@@ -25,7 +25,7 @@ public class ProductController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String pathInfo = request.getPathInfo(); // "/id"
+        String pathInfo = request.getPathInfo();
 
         if(pathInfo == null || pathInfo.equals("/")){
             sendError(response, 400, "Bad Request", "Invalid request body");
