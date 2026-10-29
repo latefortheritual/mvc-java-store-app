@@ -51,15 +51,9 @@ Scopul este didactic. Construim de mână mecanismul pe care Spring îl ascunde:
 
 7. **Metodele primesc parametri curați și întorc obiecte.** Primesc id-ul ca `int` și body-ul ca DTO. Dispatcher-ul face partea de HTTP: parsează id-ul, citește și scrie JSON-ul. Asta elimină și duplicarea din controllere.
 8. **Containerul folosește constructor injection prin reflection.** Instanțele se creează lazy și se păstrează ca singleton. Repository-urile trebuie să primească `DatabaseConfig` în constructor, nu trei String-uri, fiindcă un container nu poate ghici ce String să injecteze.
-9. **`/mobile/products` rămâne deocamdată pe maparea ei din Tomcat.** O mapare exactă câștigă în fața lui `/*`. Ruta se integrează în router abia la final. La pasul 6, ruta a intrat în router: `MobileProductsController` e marcat cu `@Controller("/mobile/products")`, iar maparea din Tomcat a dispărut.
+9. **`/mobile/products` rămâne deocamdată pe maparea ei din Tomcat.** O mapare exactă câștigă în fața lui `/*`. Ruta se integrează în router abia la final.
 10. **Erorile router-ului sunt excepții tratate în `GlobalExceptionFilter`.** 404 pentru o resursă necunoscută, 405 pentru un verb nesuportat, 400 pentru un id invalid.
 11. **Codul de framework stă într-un pachet separat, `org.example.framework`.**
-12. **Pasul 6 folosește varianta 6a: adnotări, cu lista de controllere dată explicit în Main.** Scanarea automată a pachetului, varianta 6b, rămâne exercițiu. Detaliile variantei 6a:
-    - **Adnotările stau într-un sub-pachet,** `org.example.framework.annotation`.
-    - **Adnotările de verb sunt marcate cu meta-adnotarea `@HttpMethod`,** la fel ca `@GetMapping` în Spring. Dispatcher-ul află verbul fără un if-else pe tipul adnotării.
-    - **Variabilele din path se leagă cu `@PathVariable`,** iar statusul 201 vine din `@ResponseStatus(201)`.
-    - **Tabela de rute se construiește la pornire,** dar controllerele rămân lazy.
-    - **Un path inexistent dă 404, iar un path existent cu alt verb dă 405.** De aceea `/products/1/2` dă acum 404, nu 400.
 
 ## De ce un pachet `framework`
 
@@ -68,7 +62,6 @@ Scopul este didactic. Construim de mână mecanismul pe care Spring îl ascunde:
 - **Așa e construit și Spring.** Framework-ul stă într-o bibliotecă separată. Aplicația depinde de el, dar el nu știe nimic despre aplicație.
 - **Regula:** aplicația are voie să folosească `framework`, iar `framework` nu are voie să depindă de aplicație. Testul simplu este că pachetul ar trebui să funcționeze neschimbat într-un alt proiect.
 - **La pasul 1, regula încă nu e respectată.** Fiecare import din pachetele aplicației în `framework` este o legătură care urmează să fie eliminată în pașii următori.
-- **După pasul 6, a rămas o singură legătură:** dispatcher-ul importă trei excepții din `org.example.exception`, ca `GlobalExceptionFilter` să le transforme în statusuri HTTP. Containerul, adnotările și `RequestParams` nu depind deloc de aplicație.
 
 ## Planul pe pași
 
@@ -79,23 +72,16 @@ Fiecare pas este un commit care funcționează. Testele E2E și comenzile `curl`
 3. **Container DI.** Main nu mai construiește manual lanțul de dependențe. Containerul îl construiește prin reflection. Dispatcher-ul cere instanțele containerului.
 4. **Convenția de nume.** Registry-ul manual dispare. Numele clasei se calculează din URL și se încarcă prin reflection.
 5. **Controller propriu.** `ProductsController` nu mai extinde HttpServlet și primește cele șase metode. Dispatcher-ul le alege după tabelul de la decizia 6 și le apelează prin `Method.invoke`.
-6. **Adnotări.** `@Controller` pe clasă declară path-ul de bază, iar `@Get`, `@Post`, `@Put`, `@Patch` și `@Delete` declară rutele. Convenția de nume și tabelul de acțiuni dispar, iar ruta de mobile intră și ea în router.
+6. **Opțional: adnotări.** O adnotare pe clasă declară resursa, iar ruta de mobile intră și ea în router.
 
-Ghidul pas cu pas pentru reproducerea tuturor celor șase pași este în `docs/router-ghid-pas-cu-pas.md`.
+## Puncte din code review amânate
 
-## Starea punctelor din code review
+Punctele 1, 2 și 3 sunt corectate. Restul sunt amânate, fiindcă rutarea are prioritate. Pașii 5 și 7 din plan elimină mare parte din ele.
 
-Punctele 1, 2 și 3 au fost corectate înainte de router. Rutarea a rezolvat alte trei puncte:
-
-- **Punctul 4, rezolvat la pasul 5:** un id invalid răspunde acum cu „Id must be a positive integer”, nu cu „Invalid request body”.
-- **Punctul 5, rezolvat la pasul 5:** parsarea id-ului, validarea și scrierea JSON stau acum o singură dată, în dispatcher.
-- **Punctul 6, rezolvat la pasul 5:** `sendError` a dispărut din controllere.
-
-Tot la pasul 5 a fost reparat și testul unitar care pica înainte de router.
-
-Punctele de mai jos rămân deschise:
-
+- **Punctul 4:** un id invalid în URL răspunde cu mesajul „Invalid request body”.
+- **Punctul 5:** parsarea id-ului, validarea, `sendError` și scrierea JSON sunt duplicate în controllere.
+- **Punctul 6:** `sendError` din `ProductsController` nu este folosit.
 - **Punctul 7:** request-urile folosesc `brandId`, iar răspunsurile `brand_id`.
 - **Punctul 8:** mesajele de validare a prețului nu corespund regulii din schema bazei de date.
 - **Punctul 9:** erorile de validare din DTO-uri își pierd mesajul și ajung la client ca un 400 generic.
-- **Punctul 10, rezolvat parțial la pasul 3:** repository-urile primesc acum `DatabaseConfig`, nu trei String-uri. Rămân deschise conexiunea nouă deschisă la fiecare query și cele două query-uri care nu închid ResultSet-ul în try-with-resources.
+- **Punctul 10:** repository-urile primesc trei String-uri, deschid o conexiune nouă la fiecare query și două query-uri nu închid ResultSet-ul în try-with-resources.
