@@ -3,9 +3,7 @@ package org.example.middleware;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.dto.ErrorResponse;
-import org.example.exception.BadRequestException; // [router-5] aruncată de dispatcher pentru un id invalid
 import org.example.exception.DataAccessException;
-import org.example.exception.MethodNotAllowedException; // [router-5] aruncată de dispatcher pentru un verb nesuportat
 import org.example.exception.NotFoundException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
@@ -24,10 +22,6 @@ public class GlobalExceptionFilter implements Filter {
             chain.doFilter(request, response);// the controller runs in here
         } catch (JacksonException e) {
             sendError(httpResponse, 400, "Bad Request", "Invalid request body");
-        } catch (BadRequestException e) { // [router-5] input invalid în URL, de exemplu /products/abc
-            sendError(httpResponse, 400, "Bad Request", e.getMessage()); // [router-5] mesajul explică exact ce e greșit
-        } catch (MethodNotAllowedException e) { // [router-5] resursa există, dar nu suportă verbul
-            sendError(httpResponse, 405, "Method Not Allowed", e.getMessage()); // [router-5] 405 în JSON, nu pagina HTML a lui Tomcat
         } catch (NotFoundException e) {
             sendError(httpResponse, 404, "Not Found", e.getMessage());
         } catch (DataAccessException e) {

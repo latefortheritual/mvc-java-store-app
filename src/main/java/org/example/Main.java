@@ -7,10 +7,14 @@ import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.example.config.DatabaseConfig;
 import org.example.controller.MobileProductsController;
-import org.example.framework.Container; // [router-3] containerul de dependency injection
-import org.example.framework.DispatcherServlet; // [router-1] front controller-ul care primește request-urile de produse
+import org.example.controller.ProductController;
+import org.example.controller.ProductsController;
 import org.example.middleware.GlobalExceptionFilter;
 import org.example.middleware.LoggingFilter;
+import org.example.repository.BrandRepository;
+import org.example.repository.CategoryRepository;
+import org.example.repository.ProductRepository;
+import org.example.service.ProductService;
 
 public class Main {
     static void main() throws LifecycleException {
@@ -23,16 +27,36 @@ public class Main {
         Context context = tomcat.addContext("", null);
 
 
-        Container container = new Container(); // [router-3] containerul care construiește tot lanțul de dependențe
-        container.register(DatabaseConfig.class, DatabaseConfig.fromEnvironment()); // [router-3] singurul obiect dat manual: vine din variabilele de mediu, nu dintr-un constructor
+        DatabaseConfig databaseConfig = DatabaseConfig.fromEnvironment();
 
-        DispatcherServlet dispatcherServlet = new DispatcherServlet(container, "org.example.controller"); // [router-4] /products ajunge prin convenție la org.example.controller.ProductsController
+        ProductRepository productRepository = new ProductRepository(
+                databaseConfig.getDbUrl(),
+                databaseConfig.getDbUser(),
+                databaseConfig.getDbPassword()
+        );
 
-        Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet); // [router-2] singurul servlet pentru produse, acum cu registry
-        Tomcat.addServlet(context, "mobileProductsServlet", container.get(MobileProductsController.class)); // [router-3] tot din container, ca să folosească același ProductService
+        BrandRepository brandRepository = new BrandRepository(
+                databaseConfig.getDbUrl(),
+                databaseConfig.getDbUser(),
+                databaseConfig.getDbPassword()
+        );
 
-        context.addServletMappingDecoded("/*", "dispatcherServlet"); // [router-1] cu /*, tot path-ul ajunge în getPathInfo(); cu / ar fi ajuns în getServletPath()
-        context.addServletMappingDecoded("/mobile/products", "mobileProductsServlet"); // [router-1] o mapare exactă câștigă în fața lui /*, deci ocolește dispatcher-ul
+        CategoryRepository categoryRepository = new CategoryRepository(
+                databaseConfig.getDbUrl(),
+                databaseConfig.getDbUser(),
+                databaseConfig.getDbPassword()
+        );
+
+        ProductService productService = new ProductService(productRepository, brandRepository, categoryRepository);
+
+
+        Tomcat.addServlet(context, "productsServlet", new ProductsController(productService));
+        Tomcat.addServlet(context, "productServlet", new ProductController(productService));
+        Tomcat.addServlet(context, "mobileProductsServlet", new MobileProductsController(productService));
+
+        context.addServletMappingDecoded("/products", "productsServlet");
+        context.addServletMappingDecoded("/products/*", "productServlet");
+        context.addServletMappingDecoded("/mobile/products", "mobileProductsServlet");
 
         //filters take 2 objects: a definition(the filter and its name) and a mapping (which paths it applies to)
         FilterDef loggingDef = new FilterDef();
