@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.annotation.Log;
 import org.example.dto.ErrorResponse;
+import org.example.exception.BadRequestException;
 import org.example.dto.ProductWriteRequest;
 import org.example.model.Product;
 import org.example.service.ProductService;
@@ -52,7 +53,11 @@ public class ProductsController extends HttpServlet {
             size = MAX_SIZE;
         }
 
-        List<Product> products = productService.getProduct(page,size);
+        // filtre opționale
+        Integer brandId = parseOptionalId(request.getParameter("brand_id"), "brand_id");
+        Integer categoryId = parseOptionalId(request.getParameter("category_id"), "category_id");
+
+        List<Product> products = productService.getProduct(page, size, brandId, categoryId);
 
         response.setStatus(200);
         response.setContentType("application/json; charset=UTF-8");
@@ -82,6 +87,18 @@ public class ProductsController extends HttpServlet {
         }
 
         return result;
+    }
+
+    // null dacă filtrul lipsește; 400 dacă e prezent, dar nu e un id valid,
+    // ca să nu întoarcem toate produsele când clientul a cerut un filtru
+    private Integer parseOptionalId(String text, String parameterName){
+        if(text == null){
+            return null;
+        }
+        if(!isPositiveNaturalNumber(text)){
+            throw new BadRequestException(parameterName + " must be a positive integer");
+        }
+        return Integer.parseInt(text);
     }
 
     private boolean isPositiveNaturalNumber (String text){

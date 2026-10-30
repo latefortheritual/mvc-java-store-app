@@ -47,18 +47,37 @@ public class ProductRepository {
 
     }
 
-    public List<Product> readProduct(int limit, long offset) {
-        String sql = "SELECT * " +
-                "FROM product " +
-                "ORDER BY id " +
-                "LIMIT ? OFFSET ?";
+    public List<Product> readProduct(int limit, long offset, Integer brandId, Integer categoryId) {
+        List<String> conditions = new ArrayList<>();
+        List<Object> parameters = new ArrayList<>();
+
+        // doar filtrele primite intră în WHERE; valorile merg tot prin "?", niciodată lipite în SQL
+        if (brandId != null) {
+            conditions.add("brand_id = ?");
+            parameters.add(brandId);
+        }
+        if (categoryId != null) {
+            conditions.add("category_id = ?");
+            parameters.add(categoryId);
+        }
+
+        String sql = "SELECT * FROM product";
+        if (!conditions.isEmpty()) {
+            sql = sql + " WHERE " + String.join(" AND ", conditions);
+        }
+        sql = sql + " ORDER BY id LIMIT ? OFFSET ?";
+        parameters.add(limit);
+        parameters.add(offset);
+
         List<Product> products = new ArrayList<>();
 
         try (Connection connection = DriverManager.getConnection(url, user, password);
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setInt(1, limit);
-            statement.setLong(2, offset);
+            // indexul din JDBC începe de la 1, în ordinea semnelor "?"
+            for (int i = 0; i < parameters.size(); i++) {
+                statement.setObject(i + 1, parameters.get(i));
+            }
 
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {

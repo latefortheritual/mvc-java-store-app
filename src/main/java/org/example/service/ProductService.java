@@ -28,9 +28,10 @@ public class ProductService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<Product> getProduct(int page, int size){
+    // brandId și categoryId sunt null când filtrul lipsește
+    public List<Product> getProduct(int page, int size, Integer brandId, Integer categoryId){
         long offset = (long) (page - 1) * size;
-        return productRepository.readProduct(size, offset);
+        return productRepository.readProduct(size, offset, brandId, categoryId);
     }
 
     public Product getProductById(int productId){
