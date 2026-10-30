@@ -6,6 +6,7 @@ import org.example.dto.ErrorResponse;
 import org.example.exception.BadRequestException;
 import org.example.exception.DataAccessException;
 import org.example.exception.InvalidPaginationException;
+import org.example.exception.MethodNotAllowedException;
 import org.example.exception.NotFoundException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
@@ -28,6 +29,8 @@ public class GlobalExceptionFilter implements Filter {
             sendError(httpResponse, 400, "Bad Request", e.getMessage());
         } catch (NotFoundException e) {
             sendError(httpResponse, 404, "Not Found", e.getMessage());
+        } catch (MethodNotAllowedException e) {
+            sendError(httpResponse, 405, "Method Not Allowed", e.getMessage());
         } catch (DataAccessException e) {
             e.printStackTrace();
             sendError(httpResponse, 503, "Service Unavailable", "Database unavailable");

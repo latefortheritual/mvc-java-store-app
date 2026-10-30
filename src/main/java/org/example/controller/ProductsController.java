@@ -1,31 +1,21 @@
 package org.example.controller;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.example.annotation.Log;
-import org.example.dto.ErrorResponse;
+import org.example.dto.PatchProductRequest;
 import org.example.dto.ProductWriteRequest;
+import org.example.framework.RequestParams;
 import org.example.model.Product;
 import org.example.service.ProductService;
-import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.List;
 
-public class ProductsController extends HttpServlet {
+// un singur controller pentru toată resursa /products: colecția și fiecare produs
+public class ProductsController {
 
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_SIZE = 100;
     private static final int MAX_SIZE = 1000;
     private static final int MAX_DIGITS = 9;
-
-    private final JsonMapper jsonMapper = JsonMapper.builder().build();
-    private static final Logger logger = LogManager.getLogger(ProductsController.class);
 
     private final ProductService productService;
 
@@ -33,50 +23,48 @@ public class ProductsController extends HttpServlet {
         this.productService = productService;
     }
 
+    // GET /products
     @Log
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        try{
-            Method method = ProductsController.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-            if(method.isAnnotationPresent(Log.class)){
-                logger.info("{} {}", request.getMethod(), request.getRequestURI());
-            }
-        }catch(NoSuchMethodException e){
-            throw new RuntimeException(e);
-        }
-
-        int page = parsePositiveIntOrDefault(request, "page", DEFAULT_PAGE);
-        int size = parsePositiveIntOrDefault(request, "size", DEFAULT_SIZE);
+    public List<Product> getAll(RequestParams params) {
+        int page = parsePositiveIntOrDefault(params, "page", DEFAULT_PAGE);
+        int size = parsePositiveIntOrDefault(params, "size", DEFAULT_SIZE);
 
         if(size > MAX_SIZE){
             size = MAX_SIZE;
         }
 
-        List<Product> products = productService.getProduct(page,size);
-
-        response.setStatus(200);
-        response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write(jsonMapper.writeValueAsString(products));
-
+        return productService.getProduct(page,size);
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-        ProductWriteRequest createProductRequest = jsonMapper.readValue(request.getReader(), ProductWriteRequest.class);
-
-        Product createdProduct = productService.createProduct(createProductRequest);
-
-        response.setStatus(201);
-        response.setContentType("application/json; charset=UTF-8");
-        response.getWriter().write(jsonMapper.writeValueAsString(createdProduct));
-
+    // GET /products/{id}
+    public Product getOne(int id) {
+        return productService.getProductById(id);
     }
 
-    private int parsePositiveIntOrDefault(HttpServletRequest request, String parameterName, int defaultValue){
+    // POST /products
+    public Product create(ProductWriteRequest createProductRequest) {
+        return productService.createProduct(createProductRequest);
+    }
+
+    // PUT /products/{id}
+    public Product update(int id, ProductWriteRequest productWriteRequest) {
+        return productService.updateProductById(id, productWriteRequest);
+    }
+
+    // PATCH /products/{id}
+    public Product patch(int id, PatchProductRequest patchProductRequest) {
+        return productService.updateProductFieldsById(id, patchProductRequest);
+    }
+
+    // DELETE /products/{id}
+    public Product delete(int id) {
+        return productService.deleteProductById(id);
+    }
+
+    private int parsePositiveIntOrDefault(RequestParams params, String parameterName, int defaultValue){
         int result = defaultValue;
 
-        String text = request.getParameter(parameterName);
+        String text = params.get(parameterName);
         if(isPositiveNaturalNumber(text)){
             result = Integer.parseInt(text);
         }
@@ -97,12 +85,5 @@ public class ProductsController extends HttpServlet {
             }
         }
         return Integer.parseInt(text) > 0;
-    }
-
-    private void sendError(HttpServletResponse response, int statusCode, String error, String message) throws IOException {
-        response.setStatus(statusCode);
-        response.setContentType("application/json; charset=UTF-8");
-        ErrorResponse errorResponse = new ErrorResponse(statusCode, error, message);
-        response.getWriter().write(jsonMapper.writeValueAsString(errorResponse));
     }
 }

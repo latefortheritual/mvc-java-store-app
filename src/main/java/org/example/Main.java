@@ -7,7 +7,6 @@ import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.example.config.DatabaseConfig;
 import org.example.controller.MobileProductsController;
-import org.example.controller.ProductController;
 import org.example.controller.ProductsController;
 import org.example.framework.DispatcherServlet;
 import org.example.middleware.GlobalExceptionFilter;
@@ -51,14 +50,13 @@ public class Main {
         ProductService productService = new ProductService(productRepository, brandRepository, categoryRepository);
 
 
-        ProductsController productsController = new ProductsController(productService);
-        ProductController productController = new ProductController(productService);
+        // doar rețetele; controllerele se creează lazy, la primul request
+        DispatcherServlet dispatcherServlet = new DispatcherServlet();
+        dispatcherServlet.register("products", () -> new ProductsController(productService));
+        dispatcherServlet.register("mobile/products", () -> new MobileProductsController(productService));
 
-        Tomcat.addServlet(context, "dispatcherServlet", new DispatcherServlet(productController, productsController));
-        Tomcat.addServlet(context, "mobileProductsServlet", new MobileProductsController(productService));
-
+        Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
         context.addServletMappingDecoded("/*", "dispatcherServlet");
-        context.addServletMappingDecoded("/mobile/products", "mobileProductsServlet");
 
         //filters take 2 objects: a definition(the filter and its name) and a mapping (which paths it applies to)
         FilterDef loggingDef = new FilterDef();
