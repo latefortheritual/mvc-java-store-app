@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ProductsE2ETest {
 
-    private static final String BASE_URL = "http://localhost:8083";
+    private static final String BASE_URL = "http://localhost:8080/mvc_java_store_app_1_0_SNAPSHOT_war";
     private final HttpClient client = HttpClient.newHttpClient();
 
     private HttpResponse<String> get(String url) throws IOException, InterruptedException {
